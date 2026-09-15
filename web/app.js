@@ -112,6 +112,9 @@ function roastName(meta = {}) {
 function renderTrain(state, focusMode) {
   const queue = Array.isArray(state.roast_queue) ? state.roast_queue : [];
   const train = $('#roast-train');
+  const canRemoveNow = queue.length > 0 && !state.recording && !state.replaying && !state.auto_start_armed && !state.viewing_history && !state.last_saved && state.post_drop_seconds == null;
+  $('#queue-remove-now').hidden = !canRemoveNow;
+  $('#queue-remove-now').disabled = !canRemoveNow || queueMutationPending;
   if (focusMode && !previousFocusMode) train.open = false;
   $('#train-now').textContent = roastName(state.meta);
   $('#train-now-detail').textContent = roastDetails(state.meta, state.profile, state.charge_guidance);
@@ -641,6 +644,10 @@ $('#queue-add').addEventListener('click', event => {
   $('#setup-editor').open = true;
   renderSetup(latestState, document.body.classList.contains('focus-mode'), true);
   $('#setup-editor').scrollIntoView({block:'nearest'}); $('#bean').focus();
+});
+$('#queue-remove-now').addEventListener('click', event => {
+  event.preventDefault(); event.stopPropagation();
+  if (!event.currentTarget.disabled) $('#new-roast').click();
 });
 $('#learned-profile').addEventListener('change', async event => {
   if (!event.target.value) { markSetupDirty(); return; }

@@ -43,7 +43,10 @@
         <span class="train-arrow" aria-hidden="true">→</span>
         <span class="train-summary-slot"><small>NEXT</small><b id="train-next">Nothing queued</b><em id="train-next-detail">Add a roast from setup</em></span>
         <strong id="train-later-count">No later roasts</strong>
-        <button id="queue-add" class="secondary" type="button" aria-label="Add a roast to the queue">+ Add roast</button>
+        <span class="train-summary-actions">
+          <button id="queue-remove-now" class="secondary" type="button" aria-label="Remove current roast and promote the next queued roast" hidden>Remove NOW</button>
+          <button id="queue-add" class="secondary" type="button" aria-label="Add a roast to the queue">+ Add roast</button>
+        </span>
       </summary>
       <div class="train-panel">
         <div><b>Ordered roast train</b><small>Queue changes never alter the active roast.</small></div>
