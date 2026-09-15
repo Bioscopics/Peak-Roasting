@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peak Roasting</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">RC</span>
+        <div><h1>Peak Roasting</h1><p>Mountain Top Roasters · Diedrich IR-5</p></div>
+      </div>
+      <div id="connection" class="connection waiting"><span></span><b>Connecting…</b></div>
+    </header>
+
+    <details id="setup-editor" class="setup card" open>
+      <summary><b id="setup-scope-label">CURRENT ROAST</b><span id="setup-meta-summary"></span><small id="setup-status">Ready to edit</small></summary>
+      <div class="setup-modes" role="group" aria-label="Roast setup mode">
+        <button id="setup-current" type="button" data-setup-mode="current">Current</button>
+        <button id="setup-append" type="button" data-setup-mode="append">Append</button>
+        <button id="setup-edit" type="button" data-setup-mode="edit" disabled>Edit selected</button>
+      </div>
+      <div class="setup-fields">
+        <label class="field bean-field"><span>Bean name</span><input id="bean" list="bean-suggestions" placeholder="e.g. Nyamasheke Lot 12"><datalist id="bean-suggestions"></datalist></label>
+        <label class="field"><span>Origin</span><input id="origin" list="origin-suggestions" value="Rwanda"><datalist id="origin-suggestions"></datalist></label>
+        <div class="field"><span>Roast</span><div class="segments"><button type="button" data-level="light" class="active">Light</button><button type="button" data-level="medium">Medium</button><button type="button" data-level="correction">Correction</button></div></div>
+        <label class="field"><span>Desired drop (°F)</span><input id="desired-drop-f" type="number" min="250" max="500" step="1" inputmode="numeric"></label>
+        <div class="field batch-field"><span>Batch size (g)</span><div class="batch-input"><input id="batch-g" type="number" min="1" max="5000" step="1" inputmode="numeric" aria-label="Batch size in grams"><button id="batch-full" type="button" class="secondary">Full · 5000 g</button></div></div>
+        <label class="teach-toggle"><input id="teach-mode" type="checkbox"><span><b>Teach mode</b><small>You judge the finished bean color.</small></span></label>
+        <label id="roast-level-label-field" class="field" hidden><span>Roast level label</span><input id="roast-level-label" placeholder="e.g. City+" maxlength="300"></label>
+        <label id="learned-profile-field" class="field" hidden><span>Learned profile</span><select id="learned-profile"><option value="">No learned profile</option></select></label>
+        <button id="save-meta" class="secondary">Save details</button>
+      </div>
+    </details>
+
+    <details id="roast-train" class="roast-train card" open>
+      <summary>
+        <span class="train-summary-slot"><small>NOW</small><b id="train-now">Unnamed roast</b><em id="train-now-detail">—</em></span>
+        <span class="train-arrow" aria-hidden="true">→</span>
+        <span class="train-summary-slot"><small>NEXT</small><b id="train-next">Nothing queued</b><em id="train-next-detail">Add a roast from setup</em></span>
+        <strong id="train-later-count">No later roasts</strong>
+        <button id="queue-add" class="secondary" type="button" aria-label="Add a roast to the queue">+ Add roast</button>
+      </summary>
+      <div class="train-panel">
+        <div><b>Ordered roast train</b><small>Queue changes never alter the active roast.</small></div>
+        <ol id="train-list" aria-label="Queued roast order"></ol>
+      </div>
+    </details>
+
+    <section id="roast-timeline" class="roast-timeline card" aria-label="Roast timeline">
+      <div id="timeline-steps" class="timeline-steps"><span class="timeline-fallback">Timeline syncing…</span></div>
+      <p id="timeline-next" class="timeline-next">Waiting for live milestones</p>
+    </section>
+
+    <section id="action-banner" class="action-banner card ready">
+      <div><span>NEXT ACTION</span><h2 id="action-title">Set air through Cooling Bin</h2><p id="action-detail">The app will give live, manual directions here.</p><small id="fuel-guidance" class="fuel-guidance" title="Advisory only; fuel is not sensed or applied.">FUEL ADVISORY · HIGH · 8</small></div>
+      <div id="optional-actions" class="optional-actions" hidden>
+        <span>OPTIONAL ACTION LOG</span>
+        <div id="action-buttons" class="action-buttons"></div>
+      </div>
+      <strong id="action-state">READY</strong>
+    </section>
+
+    <section class="dashboard">
+      <div class="main-column">
+        <section class="metrics">
+          <article class="metric et"><span>ENVIRONMENT</span><strong id="et-value">—</strong><small>°F ET</small></article>
+          <article class="metric bt"><span>BEAN</span><strong id="bt-value">—</strong><small>°F BT</small></article>
+          <article class="metric ror"><span>RATE OF RISE</span><strong id="ror-value">—</strong><small>°F / min</small></article>
+          <article class="metric timer"><span>ROAST TIME</span><strong id="timer-value">00:00</strong><small id="stage-label">Ready</small></article>
+        </section>
+
+        <section class="chart-card card">
+          <div class="chart-head">
+            <div><h2>Live curve</h2><p id="chart-caption">Adaptive markers will backfill after recording begins.</p></div>
+            <div class="legend"><span class="et-dot">ET</span><span class="bt-dot">BT</span><span class="ror-dot">RoR</span></div>
+          </div>
+          <canvas id="chart" width="1200" height="600"></canvas>
+          <div id="event-rail" class="event-rail"></div>
+        </section>
+
+        <section class="controls card">
+          <button id="new-roast" class="primary" hidden>← New roast</button>
+          <button id="start" class="secondary">Arm auto-start</button>
+          <button id="stop" class="danger" disabled>Dump + save</button>
+          <button id="replay" class="secondary">Replay reference roast</button>
+          <details id="history-manager" class="history-manager">
+            <summary>Past roasts <small id="history-reference-status">No saved reference</small></summary>
+            <div class="history-panel">
+              <div class="history-dates"><label><span>From</span><input id="history-from" type="date"></label><label><span>Through</span><input id="history-through" type="date"></label></div>
+              <label class="field"><span>Saved roast</span><select id="history-select"></select></label>
+              <p id="history-error" class="history-error" role="alert"></p>
+              <div class="history-actions"><button id="history-open" class="secondary">Open</button><button id="history-replay" class="secondary">Replay selected</button><button id="history-reference" class="secondary">Use as reference</button><button id="history-average" class="secondary">Average with current</button></div>
+            </div>
+          </details>
+          <div class="spacer"></div>
+          <div id="saved-message" class="saved-message"></div>
+          <div id="drop-result" class="saved-message" hidden></div>
+          <button id="missed-drop-target" class="secondary" hidden>I missed the drop target</button>
+          <div id="drop-correction" hidden><div class="batch-input"><input id="actual-drop-f" type="number" min="250" max="500" step="1" inputmode="numeric" aria-label="Actual drop temperature in °F" placeholder="Actual °F (optional)"><button id="save-drop-correction" class="secondary">Save drop correction</button></div></div>
+        </section>
+
+        <section class="markers card">
+          <div><h2>Manual corrections</h2><p>Tap whenever you hear or see an event. Manual marks override estimates.</p></div>
+          <div class="marker-buttons">
+            <button data-event="CHARGE">Charge</button>
+            <button data-event="FCs">FC start</button>
+            <button data-event="FCe">FC end</button>
+            <button data-event="SCs">SC start</button>
+            <button data-event="SCe">SC end</button>
+            <button data-event="DROP">Drop</button>
+            <button id="undo-mark" class="secondary">Undo last</button>
+          </div>
+        </section>
+      </div>
+
+      <aside>
+        <section id="advisory" class="advisory card">
+          <span class="eyebrow">ADAPTIVE GUIDE</span>
+          <h2 id="advisory-title">Light profile ready</h2>
+          <p id="advisory-body">Waiting for first crack before calculating the dump window.</p>
+          <div id="batch-guidance" class="target-grid batch-guidance" hidden><div><b id="batch-guidance-title"></b><p id="batch-guidance-message"></p></div></div>
+          <div class="target-grid"><div><span id="fc-target-label">FC candidate</span><b id="fc-target">362°F</b></div><div><span id="drop-target-label">Drop / ceiling</span><b id="drop-target">390 / 392°F</b></div><div><span id="dev-target-label">Development</span><b id="dev-target">1:15</b></div></div>
+          <p class="fine-print">Advisory only. The operator remains responsible for the roaster and its safety controls.</p>
+        </section>
+
+        <section class="stages card">
+          <span class="eyebrow">ROAST TIMELINE</span>
+          <div id="stages"></div>
+        </section>
+
+        <section id="airflow-card" class="airflow card">
+          <span class="eyebrow">AIR PATH · OPTIONAL LOG</span>
+          <h2 id="airflow-title">Cooling bin recommended</h2>
+          <p id="airflow-reason">Preheat and early roast position.</p>
+          <div class="airflow-buttons"><button data-airflow="cooling">Cooling bin</button><button data-airflow="half">50 / 50</button><button data-airflow="drum">Roast drum</button></div>
+          <small id="airflow-current">No airflow action logged</small>
+        </section>
+
+        <section class="references card">
+          <span class="eyebrow">REFERENCE LIBRARY</span>
+          <h2><span id="fc-likelihood">0%</span> FC likelihood</h2>
+          <p id="likelihood-explanation">Waiting for charge detection.</p>
+          <label class="field"><span>Curve overlay</span><select id="reference-select"></select></label>
+          <div class="import-row">
+            <input id="reference-file" type="file" accept=".alog">
+            <button id="import-reference" class="secondary">Import .alog</button>
+          </div>
+          <label class="field"><span>Source machine</span><input id="reference-machine" placeholder="e.g. Diedrich IR-5"></label>
+          <small>Other machines contribute timing/shape evidence, not raw-temperature equivalence.</small>
+        </section>
+
+        <section class="microphone card">
+          <span class="eyebrow">ACOUSTIC CRACK SENSOR</span>
+          <h2 id="mic-title">Microphone off</h2>
+          <p id="mic-copy">Enable the Mac microphone to combine clustered pops with the curve likelihood.</p>
+          <button id="enable-mic" class="secondary">Enable roast microphone</button>
+          <div class="mic-meter"><span id="mic-level"></span></div>
+          <small>Only acoustic measurements and pop timestamps are logged; raw audio is not saved.</small>
+        </section>
+
+        <section class="feedback card">
+          <span class="eyebrow">CUP FEEDBACK</span>
+          <h2>Record cup results</h2>
+          <div class="feedback-buttons"><button data-outcome="grassy">Grassy / green</button><button data-outcome="balanced">Balanced</button><button data-outcome="roasty">Roasty / bitter</button></div>
+          <input id="feedback-notes" placeholder="Optional tasting note">
+          <button id="save-feedback" class="secondary">Save feedback</button>
+        </section>
+
+        <section id="color-confirmation" class="color-confirmation card" hidden>
+          <span class="eyebrow">TEACH · COLOR CHECK</span>
+          <h2>Did the roast hit your color?</h2>
+          <p>The operator judges color; curve data alone does not promote this profile.</p>
+          <input id="color-notes" placeholder="Optional color notes" maxlength="500">
+          <div><button data-color-state="hit" class="primary">Hit color</button><button data-color-state="miss">Missed color</button><button id="color-later" class="secondary">Skip / later</button></div>
+        </section>
+
+        <section class="confidence card">
+          <span class="eyebrow">HOW IT DECIDES</span>
+          <p><b>High:</b> your button press or a clear curve event.</p>
+          <p><b>Medium:</b> profile temperature plus curve direction.</p>
+          <p><b>Low:</b> inferred crack ending—confirm by sound when possible.</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

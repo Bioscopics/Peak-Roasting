@@ -1,0 +1,3 @@
+#!/bin/zsh
+APP_DIR="${0:A:h:h:h:h}"
+open -a Terminal "$APP_DIR/run_roast_companion.command"

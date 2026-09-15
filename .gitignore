@@ -1,0 +1,23 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+
+# Runtime state and roast records stay local.
+data/
+
+# Generated browser evidence and local tooling state.
+output/
+.playwright-cli/
+*.trace
+
+# Internal working documents and generated analysis are not application source.
+analysis/
+planning/
+TICKET_PACK_*.md
+roast-graph-confirmation.png
